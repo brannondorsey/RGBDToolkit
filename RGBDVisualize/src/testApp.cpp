@@ -120,7 +120,9 @@ void testApp::setup(){
     gui.add(drawMesh.setup("Draw Mesh",ofxParameter<bool>()));
     gui.add(selfOcclude.setup("Self Occlude", ofxParameter<bool>()));
     gui.add(drawDOF.setup("Draw DOF", ofxParameter<bool>()));
- 	
+    gui.add(drawSSAO.setup("Draw SSAO", ofxParameter<bool>()));
+    gui.add(loadNormalDir.setup("Load Normals", ofxParameter<bool>()));
+
     gui.add( customWidth.setup("Frame Width", ofxParameter<int>(), 320, 1920*2));
     gui.add( customHeight.setup("Frame Height", ofxParameter<int>(), 240, 1080*2));
     gui.add( setCurrentSize.setup("Apply Custom Size", ofxParameter<bool>()));
@@ -139,7 +141,7 @@ void testApp::setup(){
 
 	gui.add(renderObjectFiles.setup("Export .obj Files", ofxParameter<bool>()));
 	gui.add(startSequenceAt0.setup("Start Sequence at 1", ofxParameter<bool>()));
-	
+    
     gui.loadFromFile("defaultGuiSettings.xml");
     
     loadShaders();
@@ -169,12 +171,45 @@ void testApp::loadShaders(){
 	cout << "LOADING DOF BLUR" << endl;
     dofBlur.load("shaders/dofblur");
 	cout << "LOADING DOF BLURANGE" << endl;
-	
+    daoShader.load("shaders/ssao_render");
+    
     dofBlur.begin();
     dofBlur.setUniform1i("tex", 0);
     dofBlur.setUniform1i("range", 1);
     dofBlur.end();
 
+    float halfSphereSamps[] = {
+        -0.717643236477, 0.273249441045, -0.688175618649,
+        -0.305361618869, 0.101219129631, -0.95300924778,
+        0.305361649948, 0.101219129631, -0.95300924778,
+        0.717643236477, 0.273249441045, -0.688175618649,
+        -0.448564588874, 0.753300700721, -0.507219731808,
+        -0.0284153218579, 0.753300700721, -0.664495944977,
+        -0.692949481281, 0.753300633352, 0.0272486507893,
+        -0.345248291778, 0.999093570452, -0.271523624659,
+        0.283150254848, 0.999093570452, -0.33107188344,
+        0.528938805438, 0.753300633352, -0.430145829916,
+        -0.528938805438, 0.753300633352, 0.430145919323,
+        -0.283150192691, 0.999093570452, 0.331071943045,
+        0.345248322856, 0.999093570452, 0.271523594856,
+        0.692949481281, 0.753300633352, -0.0272486060858,
+        -0.717643112163, 0.273249407361, 0.688175678253,
+        0.028415399554, 0.753300700721, 0.664495944977,
+        0.448564588874, 0.753300633352, 0.507219791412,
+        0.71764317432, 0.688175618649, 0.273249373677,
+        -0.305361525634, 0.101219028578, 0.953009307384,
+        0.305361649948, 0.101219062263, 0.95300924778,
+        0.993816845531, 0.101219028578, 0.292822957039,
+        0.993816845531, 0.101219028578, -0.292822986841,
+        -0.993816845531, 0.101219028578, 0.292823016644,
+        -0.993816907688, 0.101219062263, -0.292822927237
+    };
+    
+    daoShader.begin();
+    daoShader.setUniform3fv("samples", halfSphereSamps, 23*3);
+    daoShader.end();
+
+    
     renderer.reloadShader();
 }
 
@@ -210,6 +245,12 @@ void testApp::populateTimelineElements(){
     timeline.addCurves("DOF Range", currentCompositionDirectory + "DOFRange.xml", ofRange(10,sqrtf(1500.0)) );
     timeline.addCurves("DOF Blur", currentCompositionDirectory + "DOFBlur.xml", ofRange(0,5.0) );
 
+    timeline.addPage("Ambient Occlusion");
+    timeline.addCurves("SSAO Max Threshold", currentCompositionDirectory + "SSAOMax.xml", ofRange(0.0, 0.1), .1 );
+    timeline.addCurves("SSAO Min Threshold", currentCompositionDirectory + "SSAOMin.xml", ofRange(0.0, 0.1), .01 );
+    timeline.addCurves("SSAO Radius", currentCompositionDirectory + "SSAORadius.xml", ofRange(0, 360), 50.);
+    timeline.addCurves("SSAO Weight", currentCompositionDirectory + "SSAOWeight.xml", ofRange(0, 10), 1.0);
+    
 	timeline.addPage("Time Alignment", true);
 	timeline.addTrack("Video", videoTrack);
 	timeline.addTrack("Depth Sequence", &depthSequence);
@@ -254,9 +295,11 @@ void testApp::drawGeometry(){
         renderedCameraPos.setOrientation(cam.getOrientationQuat());
 
         ofBlendMode blendMode = OF_BLENDMODE_SCREEN;
+        
 		fbo1.begin();
 		ofClear(0,0,0,0);
-		
+        fbo1.activateAllDrawBuffers();
+
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_LINE_SMOOTH);
 		glEnable(GL_POINT_SMOOTH);
@@ -446,6 +489,35 @@ void testApp::drawGeometry(){
             fbo1.end();
         }
 		
+        if(drawSSAO){
+            
+            swapFbo.begin();
+            
+            //glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+            ofClear(0,0,0,0);
+            daoShader.begin();
+            
+            daoShader.setUniformTexture("colortex", fbo1.getTextureReference(0), 0);
+            daoShader.setUniformTexture("normaltex", fbo1.getTextureReference(1), 1);
+            daoShader.setUniformTexture("depthtex", fbo1.getDepthTexture(), 2);
+            
+            daoShader.setUniform1f("nearClip", cam.getNearClip());
+            daoShader.setUniform1f("farClip", cam.getFarClip() );
+            
+            daoShader.setUniform1f("maxThreshold", timeline.getValue("SSAO Max Threshold") );
+            daoShader.setUniform1f("minThreshold", timeline.getValue("SSAO Min Threshold") );
+            daoShader.setUniform1f("radius", timeline.getValue("SSAO Radius") );
+            daoShader.setUniform1f("weight", timeline.getValue("SSAO Weight") );
+            
+            daoShader.setUniform2f("randSeed", ofGetElapsedTimef() * ofRandom(.1, 1.), ofGetElapsedTimef() * ofRandom(.1, 1.));
+            
+            fbo1.draw(0, 0, renderFboRect.width, renderFboRect.height );
+            
+            daoShader.end();
+
+            swapFbo.end();
+            
+        }
         rendererDirty = false;
 	}
     
@@ -454,12 +526,14 @@ void testApp::drawGeometry(){
 	ofSetColor(0,0,0);
 	ofRect(fboRectangle);
 	ofPopStyle();
-    fbo1.getTextureReference().draw(ofRectangle(fboRectangle.x,fboRectangle.y+fboRectangle.height,fboRectangle.width,-fboRectangle.height));
+    if(drawSSAO){
+        swapFbo.getTextureReference().draw(ofRectangle(fboRectangle.x,fboRectangle.y+fboRectangle.height,fboRectangle.width,-fboRectangle.height));
+    }
+    else{
+        fbo1.getTextureReference().draw(ofRectangle(fboRectangle.x,fboRectangle.y+fboRectangle.height,fboRectangle.width,-fboRectangle.height));
+    }
 }
 
-//************************************************************
-///CUSTOMIZATION: Feel free to add things for interaction here
-//************************************************************
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
 	
@@ -468,8 +542,6 @@ void testApp::keyPressed(int key){
 	}
 	
 	if(loadedScene == NULL) return;
-	
-    
 	
 	if(currentlyRendering){
 		if(key == ' '){
@@ -595,6 +667,7 @@ void testApp::update(){
     }
     
 
+
 	renderBatch->enabled = viewComps && (renderQueue.size() > 0);
 
     changeCompButton->enabled = isSceneLoaded;
@@ -699,6 +772,26 @@ void testApp::update(){
 		timeline.setInOutRange(ofRange(0,1));
 	}
 	
+    if(loadNormalDir){
+        loadNormalDir = false;
+        normalsLoaded = false;
+        ofFileDialogResult r = ofSystemLoadDialog("load normals",true);
+        if(r.bSuccess){
+            ofDirectory dir;
+            dir.allowExt("png");
+            dir.listDir(r.getPath());
+            cout << "NORMALS loaded " << dir.numFiles() << endl;
+            normalMaps.clear();
+            for(int i = 0; i < dir.numFiles(); i++){
+                vector<string> filePieces = ofSplitString( ofFilePath::removeExt(dir.getName(i)), "_");
+                normalMaps[ ofToInt(filePieces[1]) ] = dir.getPath(i);
+            }
+            normalsLoaded = dir.numFiles() > 0;
+        }
+        renderer.setNormalTexture(normalImage);
+    }
+    
+    
 	cam.applyRotation = !cameraTrack->lockCameraToTrack;
 	cam.applyTranslation = !cameraTrack->lockCameraToTrack;
     
@@ -779,7 +872,7 @@ void testApp::update(){
 	   currentMirror != renderer.mirror ||
 	   fillHoles != holeFiller.enable ||
 	   currentHoleKernelSize != holeFiller.getKernelSize() ||
-       currentHoleFillIterations != holeFiller.getIterations()||
+       currentHoleFillIterations != holeFiller.getIterations() ||
 	   currentFarClip != renderer.farClip )
 	{
 		renderer.xshift = timeline.getValue("X Texture Shift");
@@ -817,6 +910,7 @@ void testApp::update(){
 		rendererNeedsUpdate = true;
 	}
 	
+
 	if(rendererNeedsUpdate){
 		updateRenderer();
 	}
@@ -828,16 +922,26 @@ void testApp::updateRenderer(){
 	if(currentDepthFrame != player.getDepthSequence()->getCurrentFrame()){
 		holeFiller.close(player.getDepthPixels());
     }
+
+    cameraTrack->setDampening(powf(timeline.getValue("Camera Dampen"),2.));
+	//used for temporal aligmnet nudging
+	currentDepthFrame = player.getDepthSequence()->getCurrentFrame();
+	currentVideoFrame = player.getVideoPlayer()->getCurrentFrame();
+    
+
+    if(normalsLoaded && normalMaps.find(currentVideoFrame) != normalMaps.end() ){
+        if(!normalImage.loadImage(normalMaps[currentVideoFrame])){
+            ofLogError("Normal map load failed");
+        }
+        else{
+            cout << "loaded normal " << normalMaps[currentVideoFrame] << endl;
+        }
+    }
     
     renderer.update();
     if(currentlyRendering && renderObjectFiles){
         meshBuilder.update();
     }
-
-	cameraTrack->setDampening(powf(timeline.getValue("Camera Dampen"),2.));
-	//used for temporal aligmnet nudging
-	currentDepthFrame = player.getDepthSequence()->getCurrentFrame();
-	currentVideoFrame = player.getVideoPlayer()->getCurrentFrame();
 
     rendererDirty = true;
 }
@@ -889,9 +993,19 @@ void testApp::allocateFrameBuffers(){
 
     dofBuffer.allocate(dofBuffersSettings);
 
-
+    //deferred
+    ofFbo::Settings deferredBuffersSettings;
+    deferredBuffersSettings.width = fboWidth;
+    deferredBuffersSettings.height = fboHeight;
+    deferredBuffersSettings.internalformat = GL_RGBA;
+    deferredBuffersSettings.numColorbuffers = 2;
+    deferredBuffersSettings.useDepth = true;
+    deferredBuffersSettings.useStencil = true;
+    deferredBuffersSettings.depthStencilAsTexture = true;
+    deferredBuffersSettings.textureTarget = ofGetUsingArbTex() ? GL_TEXTURE_RECTANGLE_ARB : GL_TEXTURE_2D;
+    fbo1.allocate(deferredBuffersSettings);
+    
     swapFbo.allocate(fboWidth, fboHeight, GL_RGB);
-    fbo1.allocate(fboWidth, fboHeight, GL_RGBA, 4);
 
     fbo1.begin();
     ofClear(0,0,0,0);
@@ -903,7 +1017,6 @@ void testApp::allocateFrameBuffers(){
 	cout << "finished allocating frame buffers" << endl;
 
 }
-
 
 //--------------------------------------------------------------
 void testApp::draw(){

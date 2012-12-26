@@ -6,14 +6,18 @@ uniform vec2 shift;
 uniform vec2 scale;
 
 uniform sampler2DRect depthTex;
+uniform sampler2DRect normalTex;
 uniform vec2 principalPoint;
 uniform vec2 fov;
-uniform float farClip;
-uniform float edgeClip;
 uniform float xsimplify;
 uniform float ysimplify;
+
+uniform float farClip;
+uniform float edgeClip;
 uniform int useTexture;
 uniform mat4 tTex;
+
+varying vec3 normal;
 
 varying float VZPositionValid0;
 
@@ -56,12 +60,12 @@ void main(void)
                         abs(left - depth) < edgeClip &&
                         abs(ur - depth) < edgeClip &&
                         abs(bl - depth) < edgeClip
-                         ) ? 1.0 : 0.0;
-
+                        ) ? 1.0 : 0.0;
     
 	vec4 pos = vec4((gl_Vertex.x - principalPoint.x) * depth / fov.x,
                     (gl_Vertex.y - principalPoint.y) * depth / fov.y, depth, 1.0);
 
+    normal = normalize(gl_NormalMatrix * ( texture2DRect(normalTex, floor(gl_Vertex.xy) + halfvec).xyz * 2.0 - 1.0) );
     
     gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * pos;
     gl_FrontColor = gl_Color;

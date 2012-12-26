@@ -103,7 +103,7 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     ofxIntSlider customWidth;
     ofxIntSlider customHeight;
     ofxToggle setCurrentSize;
-
+    
     ofxToggle fillHoles;
     ofxIntSlider currentHoleKernelSize;
     ofxIntSlider currentHoleFillIterations;
@@ -115,6 +115,16 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     bool currentRenderObjectFiles;
     bool firstRenderFrame;
     bool startRenderMode;
+    
+    //NORMAL ADDITION
+    ofxToggle loadNormalDir;
+    bool normalsLoaded;
+    string normalDirectory;
+    map<int,string> normalMaps;
+    ofImage normalImage;
+    ofxToggle drawSSAO;
+
+    
 	//MSA Object delegate
     ofxMSAInteractiveObjectWithDelegate* mediaBinButton;
     ofxMSAInteractiveObjectWithDelegate* changeCompButton;
@@ -176,7 +186,8 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
 
     ofShader dofRange;
     ofShader dofBlur;
-
+    ofShader daoShader;
+    
 	ofFbo fbo1;
     ofFbo swapFbo; //used for temp drawing
     ofFbo dofBuffer; //used to get a solid depth texture
