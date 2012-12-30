@@ -142,7 +142,7 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     map<int,string> faceMaps;
     ofImage faceImage;
 
-    
+
     ofImage distortImage;
     
 	//MSA Object delegate
@@ -228,5 +228,7 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     ofNode renderedCameraPos;
     
     ofImage background;
-	string pathDelim;	
+	string pathDelim;
+    
+    void drawPlanes(float size, float step, int lineThickness, ofFloatColor color);
 };

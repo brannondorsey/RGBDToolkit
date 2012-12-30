@@ -271,6 +271,13 @@ void testApp::populateTimelineElements(){
     timeline.addCurves("Scanline Discard Frequency",currentCompositionDirectory + "ScanlineDiscardFrequency.xml", ofRange(.1, 10), 0.0);;
     timeline.addCurves("Scanline Discard Rate", currentCompositionDirectory + "ScanlineDiscardRate.xml", ofRange(0, 10.0), 0.0);
 
+    timeline.addPage("Grid Planes");
+    timeline.addCurves("Plane1 Size", currentCompositionDirectory + "Plane1Size.xml", ofRange(0, 4000), 0.0);
+    timeline.addCurves("Plane1 Step", currentCompositionDirectory + "Plane1Step.xml", ofRange(20, 500), 50);
+    timeline.addCurves("Plane1 Alpha", currentCompositionDirectory + "Plane1Alpha.xml", ofRange(0, 1.0), 0);
+    timeline.addCurves("Plane1 Line Thickness", currentCompositionDirectory + "Plane1LineThickness.xml", ofRange(.1, 5), 0);
+
+    
     timeline.addPage("Background");
     timeline.addCurves("Background Top", currentCompositionDirectory + "BackgroundTop.xml", ofRange(0.0, 1.0), .0 );
     timeline.addCurves("Background Bottom", currentCompositionDirectory + "BackgroundBottom.xml", ofRange(0.0, 1.0), .00 );
@@ -370,6 +377,11 @@ void testApp::drawGeometry(){
 			usedDepth = true;
 		}
 
+        drawPlanes(timeline.getValue("Plane1 Size"),
+                   timeline.getValue("Plane1 Step"),
+                   timeline.getValue("Plane1 Line Thickness"),
+                   ofFloatColor(1.,1.,1.,timeline.getValue("Plane1 Alpha")));
+        
 		if(!usedDepth){
 			glDisable(GL_DEPTH_TEST);
 		}
@@ -573,6 +585,51 @@ void testApp::drawGeometry(){
     else{
         fbo1.getTextureReference().draw(ofRectangle(fboRectangle.x,fboRectangle.y+fboRectangle.height,fboRectangle.width,-fboRectangle.height));
     }
+}
+
+//--------------------------------------------------------------
+void testApp::drawPlanes(float size, float step, int lineThickness, ofFloatColor color){
+    float min = -size;
+    float max =  size;
+//    float step = 10;
+    
+    ofMesh grid;
+    //floor grid (y == 0)
+    for(float x = min; x < max; x+=step){
+        grid.addVertex(ofVec3f(x,0,min));
+        grid.addVertex(ofVec3f(x,0,max));
+    }
+    for(float z = min; z < max; z+=step){
+        grid.addVertex(ofVec3f(min,0,z));
+        grid.addVertex(ofVec3f(max,0,z));
+    }
+    
+    //x == 0
+    for(float z = min; z < max; z+=step){
+        grid.addVertex(ofVec3f(0,min,z));
+        grid.addVertex(ofVec3f(0,max,z));
+    }
+    for(float y = min; y < max; y+=step){
+        grid.addVertex(ofVec3f(0,y,min));
+        grid.addVertex(ofVec3f(0,y,max));
+    }
+    
+    //z == 0
+    for(float x = min; x < max; x+=step){
+        grid.addVertex(ofVec3f(x,min,0));
+        grid.addVertex(ofVec3f(x,max,0));
+    }
+    for(float y = min; y < max; y+=step){
+        grid.addVertex(ofVec3f(min,y,0));
+        grid.addVertex(ofVec3f(max,y,0));
+    }
+    
+    ofPushStyle();
+    ofSetColor(color);
+    ofSetLineWidth(lineThickness);
+    grid.setMode(OF_PRIMITIVE_LINES);
+    grid.draw();
+    ofPopStyle();
 }
 
 //--------------------------------------------------------------
