@@ -8,6 +8,9 @@ uniform float radius;
 uniform vec2 randSeed;
 uniform float nearClip;
 uniform float farClip;
+uniform float saturation;
+
+const float epsilon = 1e-6;
 
 uniform vec3 samples[23];
 
@@ -29,38 +32,44 @@ void main(void)
     //vec4 xyzd = texture2DRect( depthtex, gl_TexCoord[0].st );
     //float depth = xyzd.a;
     float depth = getDepth( texture2DRect( depthtex, gl_TexCoord[0].st ).r );
-    if( depth == 0. ){
-        gl_FragColor = basecolor;
+    if( depth < epsilon ){
+        //gl_FragColor = basecolor;
+        gl_FragColor = vec4(1.0);
         return;
     }
+
     vec3 norm = texture2DRect( normaltex, gl_TexCoord[0].st ).xyz;
+    float faceAttenuate = 1.0-length(norm);
+//    if(norm.x < epsilon && norm.y < epsilon && norm.z < epsilon){
+//        gl_FragColor = basecolor;
+//        return;
+//    }
+
     float delta, mx, mn;
     float ao = 0.;
-    float dscl = (1.-depth);
-    dscl *= dscl;
+    float dscl = pow(1.-depth, 2.0);
     mx = maxThreshold * dscl;
     mn = minThreshold * dscl;
     float rad = radius * dscl;
     float rnd = 0.;
     vec3 ray;
 
-    for(int i=0; i<16; i++){
+    for(int i=0; i<23; i++){
         rnd = rand( gl_FragCoord.xy+randSeed+vec2(i*i));
         //ray = samples[i].zxy * rad * rnd;
         //ray = reflect( -samples[i], xyzd.xyz) * rad * rnd;
-        ray = reflect(-samples[i], norm) * rad * rnd;
+        ray = reflect(samples[i], norm) * rad * rnd;
         delta = ( depth - mn - getDepth( texture2DRect( depthtex, gl_TexCoord[0].st + ray.xy).r ));
         ao += min( 1., ( delta > 0. ) ? delta/max( delta, mx) : (mx - delta)/mx );
     }
+    vec4 aocol = vec4( ao/23.);
+    gl_FragColor = mix( mix(basecolor * aocol, basecolor, faceAttenuate), aocol, saturation);
 
-    gl_FragColor = basecolor*vec4( ao/16. );
     //for debugging the different textures
 //    gl_FragColor = vec4( ao/16. );
 //    gl_FragColor = vec4(norm, 1.0);
 //    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-//    gl_FragColor = vec4(depth);
+//    gl_FragColor = vec4(vec3(depth), 1.0);
 //    gl_FragColor.a = 1.0;
 //    gl_FragColor = basecolor;
-
-
 }

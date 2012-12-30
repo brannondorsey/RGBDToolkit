@@ -110,20 +110,40 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     ofxToggle temporalAlignmentMode;
     ofxButton captureFramePair;
 
+    ofxFloatSlider planeY;
+    ofxFloatSlider planeZ;
+    ofxFloatSlider planeWidth;
+    ofxFloatSlider planeThickness;
+    
     ofxToggle renderObjectFiles;
     ofxToggle startSequenceAt0;
     bool currentRenderObjectFiles;
     bool firstRenderFrame;
     bool startRenderMode;
     
-    //NORMAL ADDITION
-    ofxToggle loadNormalDir;
-    bool normalsLoaded;
-    string normalDirectory;
-    map<int,string> normalMaps;
-    ofImage normalImage;
     ofxToggle drawSSAO;
 
+    //NORMAL ADDITION
+    void loadNormals(string directory);
+    string normalsDirectory;
+    ofxToggle loadNormalDir;
+    ofxToggle useNormals;
+    bool normalsLoaded;
+    map<int,string> normalMaps;
+    ofImage normalImage;
+    
+    
+    //FACES ADDITION
+    void loadFaces(string directory);
+    string facesDirectory;
+    ofxToggle loadFacesDir;
+    ofxToggle useFaces;
+    bool facesLoaded;
+    map<int,string> faceMaps;
+    ofImage faceImage;
+
+    
+    ofImage distortImage;
     
 	//MSA Object delegate
     ofxMSAInteractiveObjectWithDelegate* mediaBinButton;
@@ -157,6 +177,8 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
 	
 	void addCompToRenderQueue(CompButton* comp);
 	void finishRender();
+    
+    void drawSurface();
     
     string currentCompShortName;
 	string currentCompositionDirectory;
@@ -205,5 +227,6 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
 	bool rendererDirty;
     ofNode renderedCameraPos;
     
+    ofImage background;
 	string pathDelim;	
 };

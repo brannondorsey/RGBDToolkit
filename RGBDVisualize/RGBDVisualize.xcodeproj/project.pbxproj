@@ -95,6 +95,8 @@
 		E77C754415798B9B0016FA54 /* ofxPanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E77C753C15798B9B0016FA54 /* ofxPanel.cpp */; };
 		E77C754515798B9B0016FA54 /* ofxSlider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E77C753E15798B9B0016FA54 /* ofxSlider.cpp */; };
 		E77C754615798B9B0016FA54 /* ofxToggle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E77C754015798B9B0016FA54 /* ofxToggle.cpp */; };
+		E78F5D92168D0BEB00D8D8B7 /* BackgroundParticles.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E78F5D90168D0BEB00D8D8B7 /* BackgroundParticles.cpp */; };
+		E78F5D95168D194500D8D8B7 /* SurfaceRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E78F5D93168D194500D8D8B7 /* SurfaceRenderer.cpp */; };
 		E79F58331625C6C9002B2B34 /* ofxTLCameraTrack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E79F58311625C6C9002B2B34 /* ofxTLCameraTrack.cpp */; };
 		E7A0BA7A166EB7BE00764549 /* dofrange2.frag in Sources */ = {isa = PBXBuildFile; fileRef = E7A0BA78166EB7BE00764549 /* dofrange2.frag */; };
 		E7A0BA7B166EB7BE00764549 /* dofrange2.vert in Sources */ = {isa = PBXBuildFile; fileRef = E7A0BA79166EB7BE00764549 /* dofrange2.vert */; };
@@ -380,6 +382,10 @@
 		E77C753F15798B9B0016FA54 /* ofxSlider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxSlider.h; sourceTree = "<group>"; };
 		E77C754015798B9B0016FA54 /* ofxToggle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxToggle.cpp; sourceTree = "<group>"; };
 		E77C754115798B9B0016FA54 /* ofxToggle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxToggle.h; sourceTree = "<group>"; };
+		E78F5D90168D0BEB00D8D8B7 /* BackgroundParticles.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BackgroundParticles.cpp; sourceTree = "<group>"; };
+		E78F5D91168D0BEB00D8D8B7 /* BackgroundParticles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BackgroundParticles.h; sourceTree = "<group>"; };
+		E78F5D93168D194500D8D8B7 /* SurfaceRenderer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SurfaceRenderer.cpp; sourceTree = "<group>"; };
+		E78F5D94168D194500D8D8B7 /* SurfaceRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SurfaceRenderer.h; sourceTree = "<group>"; };
 		E7997A5D1541D06500D4130C /* dofblur.frag */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = dofblur.frag; sourceTree = "<group>"; };
 		E7997A5E1541D06500D4130C /* dofblur.vert */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = dofblur.vert; sourceTree = "<group>"; };
 		E79F58311625C6C9002B2B34 /* ofxTLCameraTrack.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxTLCameraTrack.cpp; sourceTree = "<group>"; };
@@ -647,8 +653,8 @@
 				E7A0BA79166EB7BE00764549 /* dofrange2.vert */,
 				E7F96F0E153E8D0F005841A9 /* unproject.vert */,
 				E7F96F0D153E8D0F005841A9 /* unproject.frag */,
-				E7B9E407168A78D800AEAC02 /* ssao_render.frag */,
 				E7B9E408168A78D800AEAC02 /* ssao_render.vert */,
+				E7B9E407168A78D800AEAC02 /* ssao_render.frag */,
 			);
 			path = shaders;
 			sourceTree = "<group>";
@@ -742,6 +748,10 @@
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				E4B69E1F0A3A1BDC003C02F2 /* testApp.h */,
 				E4B69E1E0A3A1BDC003C02F2 /* testApp.cpp */,
+				E78F5D91168D0BEB00D8D8B7 /* BackgroundParticles.h */,
+				E78F5D90168D0BEB00D8D8B7 /* BackgroundParticles.cpp */,
+				E78F5D94168D194500D8D8B7 /* SurfaceRenderer.h */,
+				E78F5D93168D194500D8D8B7 /* SurfaceRenderer.cpp */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
@@ -1450,6 +1460,8 @@
 				E724A99716798FD8004CC19E /* ofxObjLoader.cpp in Sources */,
 				E7B9E409168A78D800AEAC02 /* ssao_render.frag in Sources */,
 				E7B9E40A168A78D800AEAC02 /* ssao_render.vert in Sources */,
+				E78F5D92168D0BEB00D8D8B7 /* BackgroundParticles.cpp in Sources */,
+				E78F5D95168D194500D8D8B7 /* SurfaceRenderer.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

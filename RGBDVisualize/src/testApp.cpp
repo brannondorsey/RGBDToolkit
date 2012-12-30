@@ -122,12 +122,16 @@ void testApp::setup(){
     gui.add(drawDOF.setup("Draw DOF", ofxParameter<bool>()));
     gui.add(drawSSAO.setup("Draw SSAO", ofxParameter<bool>()));
     gui.add(loadNormalDir.setup("Load Normals", ofxParameter<bool>()));
-
-    gui.add( customWidth.setup("Frame Width", ofxParameter<int>(), 320, 1920*2));
-    gui.add( customHeight.setup("Frame Height", ofxParameter<int>(), 240, 1080*2));
-    gui.add( setCurrentSize.setup("Apply Custom Size", ofxParameter<bool>()));
-    gui.add( lockTo720p.setup("720p", ofxParameter<bool>()));
-    gui.add( lockTo1080p.setup("1080p",ofxParameter<bool>()));
+    gui.add(loadFacesDir.setup("Load Faces", ofxParameter<bool>()));
+    
+    gui.add(useNormals.setup("Use Normals", ofxParameter<bool>()));
+    gui.add(useFaces.setup("Use Faces", ofxParameter<bool>()));
+    
+    gui.add(customWidth.setup("Frame Width", ofxParameter<int>(), 320, 1920*2));
+    gui.add(customHeight.setup("Frame Height", ofxParameter<int>(), 240, 1080*2));
+    gui.add(setCurrentSize.setup("Apply Custom Size", ofxParameter<bool>()));
+    gui.add(lockTo720p.setup("720p", ofxParameter<bool>()));
+    gui.add(lockTo1080p.setup("1080p",ofxParameter<bool>()));
     
     gui.add(currentMirror.setup("Mirror", ofxParameter<bool>()));
 	gui.add(flipTexture.setup("Flip Texture", ofxParameter<bool>()));
@@ -138,6 +142,11 @@ void testApp::setup(){
 
     gui.add(temporalAlignmentMode.setup("Temporal Alignment", ofxParameter<bool>()));
 	gui.add(captureFramePair.setup("Set Color-Depth Time", ofxParameter<bool>()));
+
+//    gui.add(planeY.setup("Plane Y", ofxParameter<float>(), -300, 300));
+//    gui.add(planeZ.setup("Plane Z", ofxParameter<float>(), 0, 1000));
+//    gui.add(planeWidth.setup("Plane Width", ofxParameter<float>(), 0, 2000));
+//    gui.add(planeThickness.setup("Plane Thickness", ofxParameter<float>(), 0, 2000));
 
 	gui.add(renderObjectFiles.setup("Export .obj Files", ofxParameter<bool>()));
 	gui.add(startSequenceAt0.setup("Start Sequence at 1", ofxParameter<bool>()));
@@ -164,6 +173,10 @@ void testApp::setup(){
     else{
         ofLogError("No default bin found");
     }
+    
+    background.loadImage("background/gradient.png");
+    distortImage.loadImage("background/fractal.jpg");
+    renderer.setDistortionTexture(distortImage);
 }
 
 void testApp::loadShaders(){
@@ -208,7 +221,6 @@ void testApp::loadShaders(){
     daoShader.begin();
     daoShader.setUniform3fv("samples", halfSphereSamps, 23*3);
     daoShader.end();
-
     
     renderer.reloadShader();
 }
@@ -222,7 +234,8 @@ void testApp::populateTimelineElements(){
 	timeline.addCurves("Camera Dampen", ofRange(0,1.0), .3);
 	videoTrack = new ofxTLVideoTrack();
 	timeline.addTrack("Video", videoTrack);
-	
+	timeline.addFlags("Notes");
+    
     //rendering
     timeline.addPage("Geometry", true);
     timeline.addCurves("Simplify X", currentCompositionDirectory + "simplifyx.xml", ofRange(1, 8), 2);
@@ -246,10 +259,21 @@ void testApp::populateTimelineElements(){
     timeline.addCurves("DOF Blur", currentCompositionDirectory + "DOFBlur.xml", ofRange(0,5.0) );
 
     timeline.addPage("Ambient Occlusion");
-    timeline.addCurves("SSAO Max Threshold", currentCompositionDirectory + "SSAOMax.xml", ofRange(0.0, 0.1), .1 );
-    timeline.addCurves("SSAO Min Threshold", currentCompositionDirectory + "SSAOMin.xml", ofRange(0.0, 0.1), .01 );
+    timeline.addCurves("SSAO Max Threshold", currentCompositionDirectory + "SSAOMax.xml", ofRange(0.0, 0.03), .1 );
+    timeline.addCurves("SSAO Min Threshold", currentCompositionDirectory + "SSAOMin.xml", ofRange(0.0, 0.03), .01 );
     timeline.addCurves("SSAO Radius", currentCompositionDirectory + "SSAORadius.xml", ofRange(0, 360), 50.);
-    timeline.addCurves("SSAO Weight", currentCompositionDirectory + "SSAOWeight.xml", ofRange(0, 10), 1.0);
+    timeline.addCurves("SSAO Saturation", currentCompositionDirectory + "SSAOSaturation.xml", ofRange(0, 1.0), 1.0);
+    
+    timeline.addPage("Distortion");
+    timeline.addCurves("Distortion Scale",currentCompositionDirectory + "DistortionScale.xml", ofRange(0, 400), 0.0);
+    timeline.addCurves("Distortion Color Sample",currentCompositionDirectory + "DistortionColorSample.xml", ofRange(0, 1.0), 0.0);
+    timeline.addCurves("Scanline Discard Threshold",currentCompositionDirectory + "ScanlineDiscardThreshold.xml", ofRange(0, 1.0), 0.0);
+    timeline.addCurves("Scanline Discard Frequency",currentCompositionDirectory + "ScanlineDiscardFrequency.xml", ofRange(.1, 10), 0.0);;
+    timeline.addCurves("Scanline Discard Rate", currentCompositionDirectory + "ScanlineDiscardRate.xml", ofRange(0, 10.0), 0.0);
+
+    timeline.addPage("Background");
+    timeline.addCurves("Background Top", currentCompositionDirectory + "BackgroundTop.xml", ofRange(0.0, 1.0), .0 );
+    timeline.addCurves("Background Bottom", currentCompositionDirectory + "BackgroundBottom.xml", ofRange(0.0, 1.0), .00 );
     
 	timeline.addPage("Time Alignment", true);
 	timeline.addTrack("Video", videoTrack);
@@ -263,6 +287,7 @@ void testApp::populateTimelineElements(){
 	timeline.addCurves("Y Texture Scale", currentCompositionDirectory + "YTextureScale.xml", ofRange(.95, 1.05), 1.0 );
 	
 	timeline.setCurrentPage("Rendering");
+    
 //	cout << "Finished adding timeline elements " << endl;
 }
 
@@ -299,17 +324,35 @@ void testApp::drawGeometry(){
 		fbo1.begin();
 		ofClear(0,0,0,0);
         fbo1.activateAllDrawBuffers();
-
+        
+        //background.draw(0, fbo1.getHeight(),fbo1.getWidth(),-fbo1.getHeight());
+        ofFloatColor startColor = ofFloatColor(powf(timeline.getValue("Background Bottom"),2.0));
+        ofFloatColor endColor = ofFloatColor(powf(timeline.getValue("Background Top"),2.0));
+        
+        ofMesh background;
+        background.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
+		background.addVertex(ofVec2f(0, 0));
+		background.addVertex(ofVec2f(renderFboRect.width, 0));
+		background.addVertex(ofVec2f(renderFboRect.width, renderFboRect.height));
+		background.addVertex(ofVec2f(0, renderFboRect.height));
+		background.addColor(startColor);
+		background.addColor(startColor);
+		background.addColor(endColor);
+		background.addColor(endColor);
+        background.draw();
+        
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_LINE_SMOOTH);
 		glEnable(GL_POINT_SMOOTH);
 		
 		cam.begin(renderFboRect);
-		
+        
 		ofPushMatrix();
 		ofPushStyle();
 		ofEnableAlphaBlending();
 
+//        drawSurface();
+        
 		bool usedDepth = false;
 		if(selfOcclude){
 			ofTranslate(0, 0, 1);
@@ -332,7 +375,6 @@ void testApp::drawGeometry(){
 		}
 
 		ofEnableBlendMode(blendMode);
-
 		if(drawWireframe && wireAlpha > 0){
 			ofTranslate(0,0,-.5);
 			ofSetColor(255*wireAlpha);
@@ -348,7 +390,6 @@ void testApp::drawGeometry(){
             float pointSize = timeline.getValue("Point Size");
             glPointSize(pointSize*pointSize);			
 			renderer.drawPointCloud();
-			
 		}
 		
 		ofPopStyle();
@@ -507,7 +548,7 @@ void testApp::drawGeometry(){
             daoShader.setUniform1f("maxThreshold", timeline.getValue("SSAO Max Threshold") );
             daoShader.setUniform1f("minThreshold", timeline.getValue("SSAO Min Threshold") );
             daoShader.setUniform1f("radius", timeline.getValue("SSAO Radius") );
-            daoShader.setUniform1f("weight", timeline.getValue("SSAO Weight") );
+            daoShader.setUniform1f("saturation", timeline.getValue("SSAO Saturation") );
             
             daoShader.setUniform2f("randSeed", ofGetElapsedTimef() * ofRandom(.1, 1.), ofGetElapsedTimef() * ofRandom(.1, 1.));
             
@@ -535,8 +576,33 @@ void testApp::drawGeometry(){
 }
 
 //--------------------------------------------------------------
+void testApp::drawSurface(){
+    ofMesh surface;
+    surface.addVertex(ofVec3f(-planeWidth/2,planeY,planeZ-planeThickness/2));
+    surface.addVertex(ofVec3f(-planeWidth/2,planeY,planeZ+planeThickness/2));
+    surface.addVertex(ofVec3f( planeWidth/2,planeY,planeZ+planeThickness/2));
+    surface.addVertex(ofVec3f( planeWidth/2,planeY,planeZ-planeThickness/2));
+    
+    surface.addNormal(ofVec3f(-1,1,-1).normalize());
+    surface.addNormal(ofVec3f(-1,1, 1).normalize());
+    surface.addNormal(ofVec3f(1,1,1).normalize());
+    surface.addNormal(ofVec3f(1,1,-1).normalize());
+    
+    surface.addIndex(0);surface.addIndex(1);surface.addIndex(3);
+    surface.addIndex(1);surface.addIndex(2);surface.addIndex(3);
+    
+    ofSphere(0, planeY, planeZ, 100);
+    
+    surface.draw();
+}
+
+//--------------------------------------------------------------
 void testApp::keyPressed(int key){
 	
+    if(timeline.isModal()){
+        return;
+    }
+    
 	if(key == 'f'){
 		ofToggleFullscreen();
 	}
@@ -777,20 +843,17 @@ void testApp::update(){
         normalsLoaded = false;
         ofFileDialogResult r = ofSystemLoadDialog("load normals",true);
         if(r.bSuccess){
-            ofDirectory dir;
-            dir.allowExt("png");
-            dir.listDir(r.getPath());
-            cout << "NORMALS loaded " << dir.numFiles() << endl;
-            normalMaps.clear();
-            for(int i = 0; i < dir.numFiles(); i++){
-                vector<string> filePieces = ofSplitString( ofFilePath::removeExt(dir.getName(i)), "_");
-                normalMaps[ ofToInt(filePieces[1]) ] = dir.getPath(i);
-            }
-            normalsLoaded = dir.numFiles() > 0;
+            loadNormals(r.getPath());
         }
-        renderer.setNormalTexture(normalImage);
     }
     
+    if(loadFacesDir){
+        loadFacesDir = false;
+        ofFileDialogResult r = ofSystemLoadDialog("load faces",true);
+        if(r.bSuccess){
+            loadFaces(r.getPath());
+        }
+    }
     
 	cam.applyRotation = !cameraTrack->lockCameraToTrack;
 	cam.applyTranslation = !cameraTrack->lockCameraToTrack;
@@ -849,6 +912,13 @@ void testApp::update(){
 	renderer.meshRotate.x = timeline.getValue("X Rotate");
     renderer.meshRotate.y = timeline.getValue("Y Rotate");
     renderer.meshRotate.z = timeline.getValue("Z Rotate");
+    
+    renderer.distortionScale = timeline.getValue("Distortion Scale");
+    renderer.distortionColorSample = timeline.getValue("Distortion Color Sample");
+    renderer.scanlineDiscardThreshold = timeline.getValue("Scanline Discard Threshold");
+    renderer.scanlineDiscardFrequency = timeline.getValue("Scanline Discard Frequency");
+    renderer.scanlineRate = timeline.getValue("Scanline Discard Rate");
+
 	renderer.flipTexture = flipTexture;
     ofVec2f simplification = ofVec2f( timeline.getValue("Simplify X"), timeline.getValue("Simplify Y") );
 	
@@ -873,7 +943,9 @@ void testApp::update(){
 	   fillHoles != holeFiller.enable ||
 	   currentHoleKernelSize != holeFiller.getKernelSize() ||
        currentHoleFillIterations != holeFiller.getIterations() ||
-	   currentFarClip != renderer.farClip )
+	   currentFarClip != renderer.farClip ||
+       renderer.useNormalTexture != useNormals ||
+       renderer.useFaceTexture != useFaces)
 	{
 		renderer.xshift = timeline.getValue("X Texture Shift");
 		renderer.yshift = timeline.getValue("Y Texture Shift");
@@ -882,7 +954,9 @@ void testApp::update(){
 		renderer.mirror = currentMirror;
 		renderer.farClip = currentFarClip;
         renderer.edgeClip = timeline.getValue("Edge Clip");
-        
+        renderer.useNormalTexture = useNormals;
+        renderer.useFaceTexture = useFaces;
+
         meshBuilder.mirror = currentMirror;
 		meshBuilder.shift.x = timeline.getValue("X Texture Shift");
 		meshBuilder.shift.y = timeline.getValue("Y Texture Shift");
@@ -916,6 +990,38 @@ void testApp::update(){
 	}
 }
 
+void testApp::loadNormals(string directory){
+    ofDirectory dir;
+    dir.allowExt("png");
+    dir.listDir(directory);
+    normalsDirectory = directory;
+    cout << "NORMALS loaded " << dir.numFiles() << endl;
+    normalMaps.clear();
+    for(int i = 0; i < dir.numFiles(); i++){
+        vector<string> filePieces = ofSplitString( ofFilePath::removeExt(dir.getName(i)), "_");
+        normalMaps[ ofToInt(filePieces[1]) ] = dir.getPath(i);
+    }
+    normalsLoaded = dir.numFiles() > 0;
+    renderer.setNormalTexture(normalImage);
+}
+
+void testApp::loadFaces(string directory){
+    ofDirectory dir;
+    dir.allowExt("png");
+    dir.listDir(directory);
+    facesDirectory = directory;
+    cout << "FACES loaded " << dir.numFiles() << endl;
+    faceMaps.clear();
+    for(int i = 0; i < dir.numFiles(); i++){
+        vector<string> filePieces = ofSplitString( ofFilePath::removeExt(dir.getName(i)), "_");
+        faceMaps[ ofToInt(filePieces[1]) ] = dir.getPath(i);
+    }
+    
+    facesLoaded = dir.numFiles() > 0;
+    renderer.setFaceTexture(faceImage);    
+}
+
+
 //--------------------------------------------------------------
 void testApp::updateRenderer(){
 
@@ -927,9 +1033,9 @@ void testApp::updateRenderer(){
 	//used for temporal aligmnet nudging
 	currentDepthFrame = player.getDepthSequence()->getCurrentFrame();
 	currentVideoFrame = player.getVideoPlayer()->getCurrentFrame();
-    
+    //renderer.currentFrame = currentVideoFrame;
 
-    if(normalsLoaded && normalMaps.find(currentVideoFrame) != normalMaps.end() ){
+    if(drawSSAO && useNormals && normalsLoaded && normalMaps.find(currentVideoFrame) != normalMaps.end() ){
         if(!normalImage.loadImage(normalMaps[currentVideoFrame])){
             ofLogError("Normal map load failed");
         }
@@ -937,7 +1043,16 @@ void testApp::updateRenderer(){
             cout << "loaded normal " << normalMaps[currentVideoFrame] << endl;
         }
     }
-    
+
+    if(drawSSAO && useFaces && facesLoaded && faceMaps.find(currentVideoFrame) != faceMaps.end() ){
+        if(!faceImage.loadImage(faceMaps[currentVideoFrame])){
+            ofLogError("Face map load failed");
+        }
+        else{
+            cout << "loaded face " << faceMaps[currentVideoFrame] << endl;
+        }
+    }
+
     renderer.update();
     if(currentlyRendering && renderObjectFiles){
         meshBuilder.update();
@@ -997,7 +1112,7 @@ void testApp::allocateFrameBuffers(){
     ofFbo::Settings deferredBuffersSettings;
     deferredBuffersSettings.width = fboWidth;
     deferredBuffersSettings.height = fboHeight;
-    deferredBuffersSettings.internalformat = GL_RGBA;
+    deferredBuffersSettings.internalformat = GL_RGBA32F;
     deferredBuffersSettings.numColorbuffers = 2;
     deferredBuffersSettings.useDepth = true;
     deferredBuffersSettings.useStencil = true;
@@ -1089,7 +1204,12 @@ void testApp::draw(){
                         savingImage.setFromPixels(player.getVideoPlayer()->getPixelsRef());
                     }
                     else{
-                        fbo1.getTextureReference().readToPixels(savingImage.getPixelsRef());
+                        if(drawSSAO){
+                            swapFbo.getTextureReference().readToPixels(savingImage.getPixelsRef());
+                        }
+                        else{
+                            fbo1.getTextureReference().readToPixels(savingImage.getPixelsRef());
+                        }
                         if(!renderObjectFiles){
                             savingImage.mirror(true, false);
                         }
@@ -1453,6 +1573,8 @@ void testApp::saveComposition(){
 	projectsettings.setValue("drawMesh", drawMesh);
     projectsettings.setValue("selfOcclude",selfOcclude);
 	projectsettings.setValue("drawDOF",drawDOF);
+    projectsettings.setValue("drawSSAO",drawSSAO);
+    
 	projectsettings.setValue("cameraSpeed", cam.speed);
 	projectsettings.setValue("cameraRollSpeed", cam.rollSpeed);
 	
@@ -1468,6 +1590,16 @@ void testApp::saveComposition(){
     
 //	projectsettings.setValue("renderTriangulation", renderTriangulation);
 //	projectsettings.setValue("enableLighting", enableLighting);
+    
+    if(normalsLoaded){
+        projectsettings.setValue("normalsDirectory", normalsDirectory);
+    }
+    if(facesLoaded){
+        projectsettings.setValue("facesDirectory", facesDirectory);
+    }
+    projectsettings.setValue("useNormals", useNormals);
+    projectsettings.setValue("useFaces", useFaces);
+    
 	projectsettings.setValue("renderObjFiles", renderObjectFiles);
 	projectsettings.setValue("startSequenceAtZero",startSequenceAt0);
 	
@@ -1528,15 +1660,15 @@ void testApp::objectDidRelease(ofxMSAInteractiveObject* object, int x, int y, in
 	}
 	else if(object == saveCompAsNewButton){
         string oldCompFolder = currentCompositionDirectory;
-        createNewComposition();
-        
-        ofDirectory oldCompDirectory(oldCompFolder);
-        oldCompDirectory.allowExt("xml");
-        oldCompDirectory.listDir();
-        for(int i = 0; i < oldCompDirectory.numFiles(); i++){
-            oldCompDirectory.getFile(i).copyTo( currentCompositionDirectory + oldCompDirectory.getName(i));
+        if(createNewComposition()){
+            ofDirectory oldCompDirectory(oldCompFolder);
+            oldCompDirectory.allowExt("xml");
+            oldCompDirectory.listDir();
+            for(int i = 0; i < oldCompDirectory.numFiles(); i++){
+                oldCompDirectory.getFile(i).copyTo( currentCompositionDirectory + oldCompDirectory.getName(i));
+            }
+            loadComposition(currentCompositionDirectory);
         }
-        loadComposition(currentCompositionDirectory);
 	}
     else if(object == renderBatch){
         startRenderMode = true;
@@ -1618,16 +1750,16 @@ bool testApp::loadComposition(string compositionDirectory){
         
         //TODO all this should be from loading the new ofxGui XML and not done manually!
         cam.speed = projectsettings.getValue("cameraSpeed", 20.);
-        cam.rollSpeed = projectsettings.setValue("cameraRollSpeed", 1);
+        cam.rollSpeed = projectsettings.getValue("cameraRollSpeed", 1);
         
         drawPointcloud = projectsettings.getValue("drawPointcloud", true);
         drawWireframe = projectsettings.getValue("drawWireframe", true);
         drawMesh = projectsettings.getValue("drawMesh", true);
 
         drawDOF = projectsettings.getValue("drawDOF",true);
+        drawSSAO = projectsettings.getValue("drawSSAO",true);
+        
         selfOcclude = projectsettings.getValue("selfOcclude",false);
-        
-        
 		currentMirror = projectsettings.getValue("mirror", false);
         flipTexture = projectsettings.getValue("flipTexture", false);
 		customWidth = projectsettings.getValue("width", 1920);
@@ -1639,6 +1771,19 @@ bool testApp::loadComposition(string compositionDirectory){
         currentHoleKernelSize = projectsettings.getValue("kernelSize", 1);
         currentHoleFillIterations = projectsettings.getValue("holeIterations", 1);
         
+        string normalDir = projectsettings.getValue("normalsDirectory", "");
+        if(normalDir != ""){
+            loadNormals(normalDir);
+            cout << "LOADED NORMALS FROM PROJECT " << normalDir << endl;
+        }
+        useNormals = projectsettings.getValue("useNormals", false);
+        
+        string facesDir = projectsettings.getValue("facesDirectory", "");
+        if(facesDir != ""){
+            loadFaces(facesDir);
+            cout << "LOADED FACES FROM PROJECT " << facesDir << endl;
+        }
+        useFaces = projectsettings.getValue("useFaces", false);
         cam.loadCameraPosition();
 	}
     else{

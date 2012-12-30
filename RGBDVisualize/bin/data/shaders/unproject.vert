@@ -7,6 +7,9 @@ uniform vec2 scale;
 
 uniform sampler2DRect depthTex;
 uniform sampler2DRect normalTex;
+uniform sampler2DRect distortTex;
+uniform float distortionScale;
+
 uniform vec2 principalPoint;
 uniform vec2 fov;
 uniform float xsimplify;
@@ -17,8 +20,15 @@ uniform float edgeClip;
 uniform int useTexture;
 uniform mat4 tTex;
 
-varying vec3 normal;
+uniform float frame;
 
+varying vec3 normal;
+varying vec3 distortionColorSample;
+
+uniform float scanlineDiscardThreshold;
+uniform float scanlineDiscardFrequency;
+
+varying float scanlineDiscard;
 varying float VZPositionValid0;
 
 const float epsilon = 1e-6;
@@ -65,10 +75,9 @@ void main(void)
 	vec4 pos = vec4((gl_Vertex.x - principalPoint.x) * depth / fov.x,
                     (gl_Vertex.y - principalPoint.y) * depth / fov.y, depth, 1.0);
 
-    normal = normalize(gl_NormalMatrix * ( texture2DRect(normalTex, floor(gl_Vertex.xy) + halfvec).xyz * 2.0 - 1.0) );
-    
-    gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * pos;
-    gl_FrontColor = gl_Color;
+    vec3 surfaceNormal = texture2DRect(normalTex, floor(gl_Vertex.xy) + halfvec).xyz * 2.0 - 1.0;
+    normal = normalize(gl_NormalMatrix * surfaceNormal);
+
 
     //projective texture on the geometry
     if(useTexture == 1){
@@ -86,4 +95,21 @@ void main(void)
         texCd.xy *= dim;
         gl_TexCoord[0] = texCd;
     }
+
+    scanlineDiscard = sin(frame + pos.y/scanlineDiscardFrequency)*.5 + .5;
+
+//    VZPositionValid0 *= ( sin(frame/4.0 + pos.y) > 0.) ? 1.0 : 0.0;
+//    pos.z += sin(frame/4.0 + pos.y/10.0)*20.0;
+    //pos.xyz += surfaceNormal * length( texture2DRect(distortTex, gl_Vertex.xy * .2).xyz ) * 100.0;
+    //pos.xyz -= surfaceNormal * 20.0;
+    
+    distortionColorSample.xy = gl_Vertex.xy;
+    float distortionAmount = length( texture2DRect(distortTex, distortionColorSample.xy).xyz);
+    pos.z -= distortionAmount * distortionScale;
+
+    distortionColorSample.z = distortionAmount;
+
+    gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * pos;
+    gl_FrontColor = gl_Color;
+
 }
