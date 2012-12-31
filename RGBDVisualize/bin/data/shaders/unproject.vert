@@ -31,7 +31,15 @@ uniform float scanlineDiscardFrequency;
 varying float scanlineDiscard;
 varying float VZPositionValid0;
 
+uniform float depthColorMin;
+uniform float depthColorMax;
+varying float depthColor;
+
 const float epsilon = 1e-6;
+
+float map(float value, float inputMin, float inputMax, float outputMin, float outputMax) {;
+	return ((value - inputMin) / (inputMax - inputMin) * (outputMax - outputMin) + outputMin);
+}
 
 void main(void)
 {
@@ -78,6 +86,7 @@ void main(void)
     vec3 surfaceNormal = texture2DRect(normalTex, floor(gl_Vertex.xy) + halfvec).xyz * 2.0 - 1.0;
     normal = normalize(gl_NormalMatrix * surfaceNormal);
 
+    depthColor = map(depth,depthColorMin,depthColorMax, 1., 0.0);
 
     //projective texture on the geometry
     if(useTexture == 1){
@@ -98,11 +107,6 @@ void main(void)
 
     scanlineDiscard = sin(frame + pos.y/scanlineDiscardFrequency)*.5 + .5;
 
-//    VZPositionValid0 *= ( sin(frame/4.0 + pos.y) > 0.) ? 1.0 : 0.0;
-//    pos.z += sin(frame/4.0 + pos.y/10.0)*20.0;
-    //pos.xyz += surfaceNormal * length( texture2DRect(distortTex, gl_Vertex.xy * .2).xyz ) * 100.0;
-    //pos.xyz -= surfaceNormal * 20.0;
-    
     distortionColorSample.xy = gl_Vertex.xy;
     float distortionAmount = length( texture2DRect(distortTex, distortionColorSample.xy).xyz);
     pos.z -= distortionAmount * distortionScale;

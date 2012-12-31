@@ -1,7 +1,6 @@
 #version 110
 #extension GL_ARB_texture_rectangle : enable
 
-
 //Shader for visualizing a depth texture as a focal distance map
 //paired with dofblur for debugging purposes
 
