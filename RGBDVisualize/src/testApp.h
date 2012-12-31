@@ -82,11 +82,14 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     void checkReallocateFrameBuffers();
     void allocateFrameBuffers();
     
+    void flagEvent(ofxTLBangEventArgs& e);
+    
     ofxPanel gui;
     
     ofxToggle drawPointcloud;
     ofxToggle drawWireframe;
     ofxToggle drawMesh;
+    ofxToggle drawScanlines;
     ofxToggle selfOcclude;
     ofxToggle drawDOF;
     
@@ -141,8 +144,7 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     bool facesLoaded;
     map<int,string> faceMaps;
     ofImage faceImage;
-
-
+    
     ofImage distortImage;
     
 	//MSA Object delegate
@@ -229,6 +231,8 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     
     ofImage background;
 	string pathDelim;
-    
-    void drawPlanes(float size, float step, int lineThickness, ofFloatColor color);
+  
+    void updateScanlineMesh();
+    ofVboMesh scanlineMesh;
+    void drawPlanes(ofVec3f origin, float size, float step, int lineThickness, ofFloatColor color);
 };

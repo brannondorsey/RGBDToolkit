@@ -175,8 +175,10 @@ void testApp::setup(){
     }
     
     background.loadImage("background/gradient.png");
-    distortImage.loadImage("background/fractal.jpg");
+    distortImage.loadImage("background/fractal2.png");
     renderer.setDistortionTexture(distortImage);
+    
+    ofAddListener(timeline.events().bangFired, this, &testApp::flagEvent);
 }
 
 void testApp::loadShaders(){
@@ -265,18 +267,37 @@ void testApp::populateTimelineElements(){
     timeline.addCurves("SSAO Saturation", currentCompositionDirectory + "SSAOSaturation.xml", ofRange(0, 1.0), 1.0);
     
     timeline.addPage("Distortion");
+    timeline.addFlags("Distortion Image",currentCompositionDirectory + "DistortionImage.xml");
     timeline.addCurves("Distortion Scale",currentCompositionDirectory + "DistortionScale.xml", ofRange(0, 400), 0.0);
     timeline.addCurves("Distortion Color Sample",currentCompositionDirectory + "DistortionColorSample.xml", ofRange(0, 1.0), 0.0);
     timeline.addCurves("Scanline Discard Threshold",currentCompositionDirectory + "ScanlineDiscardThreshold.xml", ofRange(0, 1.0), 0.0);
     timeline.addCurves("Scanline Discard Frequency",currentCompositionDirectory + "ScanlineDiscardFrequency.xml", ofRange(.1, 10), 0.0);;
     timeline.addCurves("Scanline Discard Rate", currentCompositionDirectory + "ScanlineDiscardRate.xml", ofRange(0, 10.0), 0.0);
 
+    timeline.addPage("Scanlines");
+    timeline.addCurves("scanline opacity", currentCompositionDirectory + "ScanlineOpacity.xml", ofRange(0, 1.0));
+    timeline.addCurves("scanline thickness", currentCompositionDirectory + "ScanlineThickness.xml", ofRange(0, 4), 1);
+    timeline.addCurves("scanline x step", currentCompositionDirectory + "ScanlineXStep.xml",ofRange(1, 10));
+    timeline.addCurves("scanline y step", currentCompositionDirectory + "ScanlineYStep.xml",ofRange(.25, 10), 2);
+    timeline.addCurves("scan max threshold", currentCompositionDirectory + "ScanMaxThreshold.xml",ofRange(0, 255), 255);
+    timeline.addCurves("scan min threshold", currentCompositionDirectory + "ScanMinThreshold.xml",ofRange(0, 255), 0);
+    timeline.addCurves("scan quiver",   currentCompositionDirectory + "ScanQuiver.xml", ofRange(0, 1.0), 0);
+    
     timeline.addPage("Grid Planes");
-    timeline.addCurves("Plane1 Size", currentCompositionDirectory + "Plane1Size.xml", ofRange(0, 4000), 0.0);
+    timeline.addCurves("Plane1 Size", currentCompositionDirectory + "Plane1Size.xml", ofRange(0, 8000), 0.0);
     timeline.addCurves("Plane1 Step", currentCompositionDirectory + "Plane1Step.xml", ofRange(20, 500), 50);
     timeline.addCurves("Plane1 Alpha", currentCompositionDirectory + "Plane1Alpha.xml", ofRange(0, 1.0), 0);
     timeline.addCurves("Plane1 Line Thickness", currentCompositionDirectory + "Plane1LineThickness.xml", ofRange(.1, 5), 0);
+    timeline.addCurves("Plane2 Alpha", currentCompositionDirectory + "Plane2Alpha.xml", ofRange(0, 1.0), 0);
+    timeline.addCurves("Plane2 Line Thickness", currentCompositionDirectory + "Plane2LineThickness.xml", ofRange(.1, 5), 0);
+    timeline.addCurves("Plane Fog", currentCompositionDirectory + "PlaneFog.xml", ofRange(0, .001), .001);
+    timeline.addCurves("Plane Z Offset", currentCompositionDirectory + "PlaneZOffset.xml", ofRange(0, 7000), 0);
+    timeline.addCurves("Plane Y Offset", currentCompositionDirectory + "PlaneYOffset.xml", ofRange(-700, 700), 0);
 
+    timeline.addPage("Depth Color");
+    timeline.addCurves("Depth Color Mix", currentCompositionDirectory + "DepthColorMix.xml", ofRange(0, 1.0), 0.0);
+    timeline.addCurves("Depth Color Max", currentCompositionDirectory + "DepthColorMax.xml", ofRange(0, 2000), 2000);
+    timeline.addCurves("Depth Color Min", currentCompositionDirectory + "DepthColorMin.xml", ofRange(0, 2000), 0);
     
     timeline.addPage("Background");
     timeline.addCurves("Background Top", currentCompositionDirectory + "BackgroundTop.xml", ofRange(0.0, 1.0), .0 );
@@ -296,6 +317,12 @@ void testApp::populateTimelineElements(){
 	timeline.setCurrentPage("Rendering");
     
 //	cout << "Finished adding timeline elements " << endl;
+}
+
+void testApp::flagEvent(ofxTLBangEventArgs& e){
+    if( e.track->getName() == "Distortion Image"){
+        distortImage.loadImage("background/" + e.flag);
+    }
 }
 
 void testApp::drawGeometry(){
@@ -376,11 +403,39 @@ void testApp::drawGeometry(){
 			renderer.drawMesh();
 			usedDepth = true;
 		}
+        
+        float planeSize = timeline.getValue("Plane1 Size");
+        float plane1Alpha = timeline.getValue("Plane1 Alpha");
+        float plane2Alpha =timeline.getValue("Plane2 Alpha");
+        if(planeSize > 0 && (plane1Alpha > 0 || plane2Alpha > 0)){
+            ofVec3f planeOrigin = ofVec3f(0,timeline.getValue("Plane Y Offset"),timeline.getValue("Plane Z Offset"));
 
-        drawPlanes(timeline.getValue("Plane1 Size"),
-                   timeline.getValue("Plane1 Step"),
-                   timeline.getValue("Plane1 Line Thickness"),
-                   ofFloatColor(1.,1.,1.,timeline.getValue("Plane1 Alpha")));
+            drawPlanes(planeOrigin,
+                       planeSize,
+                       timeline.getValue("Plane1 Step"),
+                       timeline.getValue("Plane1 Line Thickness"),
+                       ofFloatColor(1.,1.,1.,plane1Alpha));
+
+            drawPlanes(planeOrigin,
+                       planeSize,
+                       timeline.getValue("Plane1 Step")/5.0,
+                       timeline.getValue("Plane2 Line Thickness"),
+                       ofFloatColor(1.,1.,1.,plane2Alpha));
+        }
+
+
+        if(drawScanlines){
+            if(renderer.bindRenderer()){
+                ofTranslate(0,0,-3);
+                float scanlineThickness = timeline.getValue("scanline thickness");
+                ofSetLineWidth(scanlineThickness);
+                ofEnableBlendMode(OF_BLENDMODE_SUBTRACT);
+                scanlineMesh.setMode(OF_PRIMITIVE_LINE_STRIP);
+                scanlineMesh.draw();
+                
+                renderer.unbindRenderer();
+            }
+        }
         
 		if(!usedDepth){
 			glDisable(GL_DEPTH_TEST);
@@ -588,7 +643,7 @@ void testApp::drawGeometry(){
 }
 
 //--------------------------------------------------------------
-void testApp::drawPlanes(float size, float step, int lineThickness, ofFloatColor color){
+void testApp::drawPlanes(ofVec3f origin, float size, float step, int lineThickness, ofFloatColor color){
     float min = -size;
     float max =  size;
 //    float step = 10;
@@ -596,14 +651,15 @@ void testApp::drawPlanes(float size, float step, int lineThickness, ofFloatColor
     ofMesh grid;
     //floor grid (y == 0)
     for(float x = min; x < max; x+=step){
-        grid.addVertex(ofVec3f(x,0,min));
-        grid.addVertex(ofVec3f(x,0,max));
+        grid.addVertex(ofVec3f(x,0,min) + origin);
+        grid.addVertex(ofVec3f(x,0,max) + origin);
     }
     for(float z = min; z < max; z+=step){
-        grid.addVertex(ofVec3f(min,0,z));
-        grid.addVertex(ofVec3f(max,0,z));
+        grid.addVertex(ofVec3f(min,0,z) + origin);
+        grid.addVertex(ofVec3f(max,0,z) + origin);
     }
     
+    /*
     //x == 0
     for(float z = min; z < max; z+=step){
         grid.addVertex(ofVec3f(0,min,z));
@@ -623,18 +679,33 @@ void testApp::drawPlanes(float size, float step, int lineThickness, ofFloatColor
         grid.addVertex(ofVec3f(min,y,0));
         grid.addVertex(ofVec3f(max,y,0));
     }
+    */
     
     ofPushStyle();
+    
+    GLfloat density = timeline.getValue("Plane Fog");
+    GLfloat fogColor[4] = {0.0, 0.0, 0.0, 1.0};
+    glEnable (GL_FOG);
+    glFogi (GL_FOG_MODE, GL_EXP2);
+    glFogfv (GL_FOG_COLOR, fogColor);
+    glFogf (GL_FOG_DENSITY, density);
+    glHint (GL_FOG_HINT, GL_NICEST);
+    
     ofSetColor(color);
+    ofEnableSmoothing();
     ofSetLineWidth(lineThickness);
     grid.setMode(OF_PRIMITIVE_LINES);
     grid.draw();
+    
+    glDisable(GL_FOG);
+    
     ofPopStyle();
 }
 
 //--------------------------------------------------------------
 void testApp::drawSurface(){
     ofMesh surface;
+    
     surface.addVertex(ofVec3f(-planeWidth/2,planeY,planeZ-planeThickness/2));
     surface.addVertex(ofVec3f(-planeWidth/2,planeY,planeZ+planeThickness/2));
     surface.addVertex(ofVec3f( planeWidth/2,planeY,planeZ+planeThickness/2));
@@ -651,6 +722,31 @@ void testApp::drawSurface(){
     ofSphere(0, planeY, planeZ, 100);
     
     surface.draw();
+}
+
+//--------------------------------------------------------------
+void testApp::updateScanlineMesh(){
+    float curFrame = player.getVideoPlayer()->getCurrentFrame();
+    vector<ofVec3f> sampleVerts;
+    int curRow = 0;
+    float currentScanlineXStep = timeline.getValue("scanline thickness");
+    float currentScanlineYStep = timeline.getValue("scanline x step");
+
+    for(float y = 0; y < player.getDepthPixels().getHeight(); y+=currentScanlineYStep){
+        for(float x = 0; x < player.getDepthPixels().getWidth(); x+=currentScanlineXStep){
+            int xPos = x;
+            if(curRow%2 == 1){
+                xPos = player.getDepthPixels().getWidth()-x-1;
+            }
+            float yPos = y;
+            ofVec3f pos = meshBuilder.getWorldPoint(xPos,yPos);
+            
+            if(pos.z > 0){
+                scanlineMesh.addVertex(pos);
+            }
+        }
+        curRow++;
+    }
 }
 
 //--------------------------------------------------------------
@@ -976,6 +1072,10 @@ void testApp::update(){
     renderer.scanlineDiscardFrequency = timeline.getValue("Scanline Discard Frequency");
     renderer.scanlineRate = timeline.getValue("Scanline Discard Rate");
 
+    renderer.depthColorMix = timeline.getValue("Depth Color Mix");
+    renderer.depthColorMax = timeline.getValue("Depth Color Max");
+    renderer.depthColorMin = timeline.getValue("Depth Color Min");
+    
 	renderer.flipTexture = flipTexture;
     ofVec2f simplification = ofVec2f( timeline.getValue("Simplify X"), timeline.getValue("Simplify Y") );
 	
