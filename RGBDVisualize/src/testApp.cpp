@@ -179,6 +179,11 @@ void testApp::setup(){
     renderer.setDistortionTexture(distortImage);
     
     ofAddListener(timeline.events().bangFired, this, &testApp::flagEvent);
+    
+    createScanlineMesh();
+    
+    normalFrameOffset = 11801;
+    noiseChannel = 0;
 }
 
 void testApp::loadShaders(){
@@ -257,7 +262,7 @@ void testApp::populateTimelineElements(){
         
     timeline.addPage("Depth of Field", true);
     timeline.addCurves("DOF Distance", currentCompositionDirectory + "DOFDistance.xml", ofRange(0,sqrtf(1500.0)), 10 );
-    timeline.addCurves("DOF Range", currentCompositionDirectory + "DOFRange.xml", ofRange(10,sqrtf(1500.0)) );
+    timeline.addCurves("DOF Range", currentCompositionDirectory + "DOFRange.xml", ofRange(2,sqrtf(1500.0)) );
     timeline.addCurves("DOF Blur", currentCompositionDirectory + "DOFBlur.xml", ofRange(0,5.0) );
 
     timeline.addPage("Ambient Occlusion");
@@ -274,14 +279,19 @@ void testApp::populateTimelineElements(){
     timeline.addCurves("Scanline Discard Frequency",currentCompositionDirectory + "ScanlineDiscardFrequency.xml", ofRange(.1, 10), 0.0);;
     timeline.addCurves("Scanline Discard Rate", currentCompositionDirectory + "ScanlineDiscardRate.xml", ofRange(0, 10.0), 0.0);
 
-    timeline.addPage("Scanlines");
-    timeline.addCurves("scanline opacity", currentCompositionDirectory + "ScanlineOpacity.xml", ofRange(0, 1.0));
-    timeline.addCurves("scanline thickness", currentCompositionDirectory + "ScanlineThickness.xml", ofRange(0, 4), 1);
-    timeline.addCurves("scanline x step", currentCompositionDirectory + "ScanlineXStep.xml",ofRange(1, 10));
-    timeline.addCurves("scanline y step", currentCompositionDirectory + "ScanlineYStep.xml",ofRange(.25, 10), 2);
-    timeline.addCurves("scan max threshold", currentCompositionDirectory + "ScanMaxThreshold.xml",ofRange(0, 255), 255);
-    timeline.addCurves("scan min threshold", currentCompositionDirectory + "ScanMinThreshold.xml",ofRange(0, 255), 0);
-    timeline.addCurves("scan quiver",   currentCompositionDirectory + "ScanQuiver.xml", ofRange(0, 1.0), 0);
+//    timeline.addPage("Scanlines");
+//    timeline.addCurves("scanline opacity", currentCompositionDirectory + "ScanlineOpacity.xml", ofRange(0, 1.0));
+//    timeline.addCurves("scanline thickness", currentCompositionDirectory + "ScanlineThickness.xml", ofRange(0, 4), 1);
+//    timeline.addCurves("scanline x step", currentCompositionDirectory + "ScanlineXStep.xml",ofRange(1, 10));
+//    timeline.addCurves("scanline y step", currentCompositionDirectory + "ScanlineYStep.xml",ofRange(.25, 10), 2);
+//    timeline.addCurves("scan max threshold", currentCompositionDirectory + "ScanMaxThreshold.xml",ofRange(0, 255), 255);
+//    timeline.addCurves("scan min threshold", currentCompositionDirectory + "ScanMinThreshold.xml",ofRange(0, 255), 0);
+//    timeline.addCurves("scan quiver",   currentCompositionDirectory + "ScanQuiver.xml", ofRange(0, 1.0), 0);
+    
+    timeline.addPage("Perlin Noise");
+    timeline.addCurves("Perlin Noise Amplitude", currentCompositionDirectory + "PerlinNoiseAmp.xml", ofRange(0, 200), 0);
+    timeline.addCurves("Perlin Noise Density", currentCompositionDirectory + "PerlinNoiseDensity.xml", ofRange(1, 2000), 1);
+    timeline.addCurves("Perlin Noise Speed", currentCompositionDirectory + "PerlinNoiseSpeed.xml", ofRange(0, 2), 0);
     
     timeline.addPage("Grid Planes");
     timeline.addCurves("Plane1 Size", currentCompositionDirectory + "Plane1Size.xml", ofRange(0, 8000), 0.0);
@@ -302,6 +312,13 @@ void testApp::populateTimelineElements(){
     timeline.addPage("Background");
     timeline.addCurves("Background Top", currentCompositionDirectory + "BackgroundTop.xml", ofRange(0.0, 1.0), .0 );
     timeline.addCurves("Background Bottom", currentCompositionDirectory + "BackgroundBottom.xml", ofRange(0.0, 1.0), .00 );
+    
+    timeline.addPage("Lights");
+    timeline.addCurves("Constant Attenuate", currentCompositionDirectory + "LightConstant.xml", ofRange(0.0, 1.0), .0 );
+    timeline.addCurves("Linear Attenuate", currentCompositionDirectory + "LightLinear.xml", ofRange(0.0, 1.0), .0 );
+    timeline.addCurves("Light Pos X", currentCompositionDirectory + "LightPosX.xml", ofRange(-700, 700), .0 );
+    timeline.addCurves("Light Pos Y", currentCompositionDirectory + "LightPosY.xml", ofRange(-700, 700), .0 );
+    timeline.addCurves("Light Pos Z", currentCompositionDirectory + "LightPosZ.xml", ofRange(-200, 1000), .0 );
     
 	timeline.addPage("Time Alignment", true);
 	timeline.addTrack("Video", videoTrack);
@@ -385,7 +402,22 @@ void testApp::drawGeometry(){
 		ofPushStyle();
 		ofEnableAlphaBlending();
 
-//        drawSurface();
+        
+        //update uniforms
+        renderer.getShader().begin();
+//        timeline.addCurves("Perlin Noise Amplitude", currentCompositionDirectory + "PerlinNoiseAmp.xml", ofRange(0, 200), 0);
+//        timeline.addCurves("Perlin Noise Density", currentCompositionDirectory + "PerlinNoiseDensity.xml", ofRange(1, 2000), 1);
+//        timeline.addCurves("Perlin Noise Speed", currentCompositionDirectory + "PerlinNoiseSpeed.xml", ofRange(0, 100), 0);
+
+        renderer.getShader().setUniform1f("noiseAmout", timeline.getValue("Perlin Noise Amplitude"));
+        renderer.getShader().setUniform1f("noiseDensity", timeline.getValue("Perlin Noise Density"));
+        renderer.getShader().setUniform1f("noisePosition",noiseChannel);
+//        renderer.getShader().setUniform1f();
+//        renderer.getShader().setUniform1f();
+        renderer.getShader().end();
+        
+        noiseChannel += timeline.getValue("Perlin Noise Speed");
+        
         
 		bool usedDepth = false;
 		if(selfOcclude){
@@ -397,6 +429,24 @@ void testApp::drawGeometry(){
 			usedDepth = true;
 		}
 		
+        float constantAtten = powf(timeline.getValue("Constant Attenuate"), 2.0);
+        float linearAtten = powf(timeline.getValue("Linear Attenuate"), 2.0);
+        ofLight light;
+        light.setPosition(timeline.getValue("Light Pos X"),
+                          timeline.getValue("Light Pos Y"),
+                          timeline.getValue("Light Pos Z"));
+        light.setAttenuation(constantAtten, linearAtten, 0.0);
+        ofEnableLighting();
+        light.enable();
+        light.setPointLight();
+        
+        if(drawlightDebug){
+            ofPushStyle();
+            ofNoFill();
+            ofSphere(light.getPosition(),5);
+            ofPopStyle();
+        }
+        
 		ofTranslate(0,0,-.5);
 		if(drawMesh && meshAlpha > 0){
 			ofSetColor(255*meshAlpha);
@@ -404,24 +454,7 @@ void testApp::drawGeometry(){
 			usedDepth = true;
 		}
         
-        float planeSize = timeline.getValue("Plane1 Size");
-        float plane1Alpha = timeline.getValue("Plane1 Alpha");
-        float plane2Alpha =timeline.getValue("Plane2 Alpha");
-        if(planeSize > 0 && (plane1Alpha > 0 || plane2Alpha > 0)){
-            ofVec3f planeOrigin = ofVec3f(0,timeline.getValue("Plane Y Offset"),timeline.getValue("Plane Z Offset"));
 
-            drawPlanes(planeOrigin,
-                       planeSize,
-                       timeline.getValue("Plane1 Step"),
-                       timeline.getValue("Plane1 Line Thickness"),
-                       ofFloatColor(1.,1.,1.,plane1Alpha));
-
-            drawPlanes(planeOrigin,
-                       planeSize,
-                       timeline.getValue("Plane1 Step")/5.0,
-                       timeline.getValue("Plane2 Line Thickness"),
-                       ofFloatColor(1.,1.,1.,plane2Alpha));
-        }
 
 
         if(drawScanlines){
@@ -438,7 +471,7 @@ void testApp::drawGeometry(){
         }
         
 		if(!usedDepth){
-			glDisable(GL_DEPTH_TEST);
+//			glDisable(GL_DEPTH_TEST);
 		}
 
 		ofEnableBlendMode(blendMode);
@@ -459,11 +492,34 @@ void testApp::drawGeometry(){
 			renderer.drawPointCloud();
 		}
 		
+        glDisable(GL_DEPTH_TEST);
+        ofDisableLighting();
+        light.disable();
+
+        
+        float planeSize = timeline.getValue("Plane1 Size");
+        float plane1Alpha = timeline.getValue("Plane1 Alpha");
+        float plane2Alpha =timeline.getValue("Plane2 Alpha");
+        if(planeSize > 0 && (plane1Alpha > 0 || plane2Alpha > 0)){
+            ofVec3f planeOrigin = ofVec3f(0,timeline.getValue("Plane Y Offset"),timeline.getValue("Plane Z Offset"));
+            
+            drawPlanes(planeOrigin,
+                       planeSize,
+                       timeline.getValue("Plane1 Step"),
+                       timeline.getValue("Plane1 Line Thickness"),
+                       ofFloatColor(1.,1.,1.,plane1Alpha));
+            
+            drawPlanes(planeOrigin,
+                       planeSize,
+                       timeline.getValue("Plane1 Step")/5.0,
+                       timeline.getValue("Plane2 Line Thickness"),
+                       ofFloatColor(1.,1.,1.,plane2Alpha));
+        }
+        
 		ofPopStyle();
 		ofPopMatrix();
 		
-		glDisable(GL_DEPTH_TEST);
-		
+
 		cam.end();
 		fbo1.end();
 		//END NEW STYLE
@@ -480,10 +536,8 @@ void testApp::drawGeometry(){
             cam.end();
             dofBuffer.end();
             
-            float dofFocalDistance = timeline.getValue("DOF Distance");
-            dofFocalDistance*=dofFocalDistance;
-            float dofFocalRange = timeline.getValue("DOF Range");
-            dofFocalRange*=dofFocalRange;
+            float dofFocalDistance = powf(timeline.getValue("DOF Distance"), 2.0);
+            float dofFocalRange = powf(timeline.getValue("DOF Range"), 2.0);
             float dofBlurAmount = timeline.getValue("DOF Blur");
             
             //composite
@@ -725,28 +779,30 @@ void testApp::drawSurface(){
 }
 
 //--------------------------------------------------------------
-void testApp::updateScanlineMesh(){
-    float curFrame = player.getVideoPlayer()->getCurrentFrame();
+void testApp::createScanlineMesh(){
+    return;
+//    float curFrame = player.getVideoPlayer()->getCurrentFrame();
     vector<ofVec3f> sampleVerts;
-    int curRow = 0;
     float currentScanlineXStep = timeline.getValue("scanline thickness");
     float currentScanlineYStep = timeline.getValue("scanline x step");
 
-    for(float y = 0; y < player.getDepthPixels().getHeight(); y+=currentScanlineYStep){
-        for(float x = 0; x < player.getDepthPixels().getWidth(); x+=currentScanlineXStep){
+    int curRow = 0;
+    int width = 640;
+    int height = 480;
+    for(float y = 0; y < height; y+=currentScanlineYStep){
+        for(float x = 0; x < width; x+=currentScanlineXStep){
             int xPos = x;
             if(curRow%2 == 1){
-                xPos = player.getDepthPixels().getWidth()-x-1;
+                xPos = width-x-1;
             }
             float yPos = y;
-            ofVec3f pos = meshBuilder.getWorldPoint(xPos,yPos);
-            
-            if(pos.z > 0){
-                scanlineMesh.addVertex(pos);
-            }
+            ofVec3f pos = ofVec3f(xPos,yPos,0);
+            scanlineMesh.addVertex(pos);
         }
         curRow++;
     }
+    
+    scanlineMesh.setMode(OF_PRIMITIVE_LINE_STRIP);
 }
 
 //--------------------------------------------------------------
@@ -1156,7 +1212,7 @@ void testApp::loadNormals(string directory){
     normalMaps.clear();
     for(int i = 0; i < dir.numFiles(); i++){
         vector<string> filePieces = ofSplitString( ofFilePath::removeExt(dir.getName(i)), "_");
-        normalMaps[ ofToInt(filePieces[1]) ] = dir.getPath(i);
+        normalMaps[ normalFrameOffset + ofToInt(filePieces[1]) ] = dir.getPath(i);
     }
     normalsLoaded = dir.numFiles() > 0;
     renderer.setNormalTexture(normalImage);
@@ -1192,7 +1248,7 @@ void testApp::updateRenderer(){
 	currentVideoFrame = player.getVideoPlayer()->getCurrentFrame();
     //renderer.currentFrame = currentVideoFrame;
 
-    if(drawSSAO && useNormals && normalsLoaded && normalMaps.find(currentVideoFrame) != normalMaps.end() ){
+    if(/*drawSSAO &&*/ useNormals && normalsLoaded && normalMaps.find(currentVideoFrame) != normalMaps.end() ){
         if(!normalImage.loadImage(normalMaps[currentVideoFrame])){
             ofLogError("Normal map load failed");
         }
@@ -1201,7 +1257,7 @@ void testApp::updateRenderer(){
         }
     }
 
-    if(drawSSAO && useFaces && facesLoaded && faceMaps.find(currentVideoFrame) != faceMaps.end() ){
+    if(useFaces && facesLoaded && faceMaps.find(currentVideoFrame) != faceMaps.end() ){
         if(!faceImage.loadImage(faceMaps[currentVideoFrame])){
             ofLogError("Face map load failed");
         }

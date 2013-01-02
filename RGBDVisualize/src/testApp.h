@@ -113,6 +113,8 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     ofxToggle temporalAlignmentMode;
     ofxButton captureFramePair;
 
+    ofxToggle drawlightDebug;
+    
     ofxFloatSlider planeY;
     ofxFloatSlider planeZ;
     ofxFloatSlider planeWidth;
@@ -134,7 +136,7 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     bool normalsLoaded;
     map<int,string> normalMaps;
     ofImage normalImage;
-    
+    int normalFrameOffset;
     
     //FACES ADDITION
     void loadFaces(string directory);
@@ -144,6 +146,9 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     bool facesLoaded;
     map<int,string> faceMaps;
     ofImage faceImage;
+    
+    float noiseChannel;
+    
     
     ofImage distortImage;
     
@@ -211,7 +216,7 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     ofShader dofRange;
     ofShader dofBlur;
     ofShader daoShader;
-    
+
 	ofFbo fbo1;
     ofFbo swapFbo; //used for temp drawing
     ofFbo dofBuffer; //used to get a solid depth texture
@@ -232,7 +237,7 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     ofImage background;
 	string pathDelim;
   
-    void updateScanlineMesh();
+    void createScanlineMesh();
     ofVboMesh scanlineMesh;
     void drawPlanes(ofVec3f origin, float size, float step, int lineThickness, ofFloatColor color);
 };
