@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3D09249F170CE7D200F505BE /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3D092329170CE7D100F505BE /* README.md */; };
+		3D0924A0170CE7D200F505BE /* ofxPCL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D09232B170CE7D100F505BE /* ofxPCL.cpp */; };
+		3D0924A1170CE7D200F505BE /* Utility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3D09232F170CE7D100F505BE /* Utility.cpp */; };
 		A6063F85148B1BCF00D154C3 /* ofxTextInputField.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A6063F83148B1BCF00D154C3 /* ofxTextInputField.cpp */; };
 		A60F74261477206A007E1206 /* Calibration.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A60F73F81477206A007E1206 /* Calibration.cpp */; };
 		A60F74271477206A007E1206 /* ContourFinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A60F73F91477206A007E1206 /* ContourFinder.cpp */; };
@@ -145,6 +148,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3D092329170CE7D100F505BE /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
+		3D09232B170CE7D100F505BE /* ofxPCL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxPCL.cpp; sourceTree = "<group>"; };
+		3D09232C170CE7D100F505BE /* ofxPCL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxPCL.h; sourceTree = "<group>"; };
+		3D09232D170CE7D100F505BE /* Tree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tree.h; sourceTree = "<group>"; };
+		3D09232E170CE7D100F505BE /* Types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Types.h; sourceTree = "<group>"; };
+		3D09232F170CE7D100F505BE /* Utility.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Utility.cpp; sourceTree = "<group>"; };
+		3D092330170CE7D100F505BE /* Utility.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Utility.h; sourceTree = "<group>"; };
 		A6063F83148B1BCF00D154C3 /* ofxTextInputField.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxTextInputField.cpp; sourceTree = "<group>"; };
 		A6063F84148B1BCF00D154C3 /* ofxTextInputField.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxTextInputField.h; sourceTree = "<group>"; };
 		A60F73EF1477206A007E1206 /* Calibration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Calibration.h; sourceTree = "<group>"; };
@@ -458,6 +468,29 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3D09232A170CE7D100F505BE /* src */ = {
+			isa = PBXGroup;
+			children = (
+				3D09232B170CE7D100F505BE /* ofxPCL.cpp */,
+				3D09232C170CE7D100F505BE /* ofxPCL.h */,
+				3D09232D170CE7D100F505BE /* Tree.h */,
+				3D09232E170CE7D100F505BE /* Types.h */,
+				3D09232F170CE7D100F505BE /* Utility.cpp */,
+				3D092330170CE7D100F505BE /* Utility.h */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		3D09F87C170CE7B900F505BE /* ofxPCL */ = {
+			isa = PBXGroup;
+			children = (
+				3D092329170CE7D100F505BE /* README.md */,
+				3D09232A170CE7D100F505BE /* src */,
+			);
+			name = ofxPCL;
+			path = ../../../addons/ofxPCL;
+			sourceTree = "<group>";
+		};
 		A6063F47148B1BCF00D154C3 /* ofxTextInputField */ = {
 			isa = PBXGroup;
 			children = (
@@ -645,6 +678,7 @@
 		BB4B014C10F69532006C3DED /* addons */ = {
 			isa = PBXGroup;
 			children = (
+				3D09F87C170CE7B900F505BE /* ofxPCL */,
 				E7C0388816FF7C9D00A789D2 /* ofxGui */,
 				E74DCB4516ED25DF00A45F2F /* ofxObjLoader */,
 				E74806DA15EBC06800B4157F /* ofxTimecode */,
@@ -1422,6 +1456,7 @@
 			files = (
 				E7EF805414DB5D6B007CD3CA /* RGBD.icns in Resources */,
 				E748F78615EBBF1A00B4157F /* .gitignore in Resources */,
+				3D09249F170CE7D200F505BE /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1530,6 +1565,8 @@
 				E7C0389C16FF7C9D00A789D2 /* ofxPanel.cpp in Sources */,
 				E7C0389D16FF7C9D00A789D2 /* ofxSlider.cpp in Sources */,
 				E7C0389E16FF7C9D00A789D2 /* ofxToggle.cpp in Sources */,
+				3D0924A0170CE7D200F505BE /* ofxPCL.cpp in Sources */,
+				3D0924A1170CE7D200F505BE /* Utility.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1703,8 +1740,10 @@
 					"$(LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_7)",
 					"$(LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_8)",
 					"$(LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_9)",
+					"$(LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_10)",
 				);
 				LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_1 = "\"$(SRCROOT)/../../../addons/ofxOpenCv/libs/opencv/lib/osx\"";
+				LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_10 = "\"$(SRCROOT)/../../../addons/ofxPCL/libs/pcl/lib/osx\"";
 				LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_2 = "\"$(SRCROOT)/../../../addons/ofxOpenCv/libs/opencv/lib/osx\"";
 				LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_3 = "\"$(SRCROOT)/../../../addons/ofxOpenCv/libs/opencv/lib/osx\"";
 				LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_4 = "\"$(SRCROOT)/../../../addons/ofxTimeline/libs/openal/libs/vs2010/EFX-Util_MT\"";
@@ -1816,9 +1855,11 @@
 					"$(LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_7)",
 					"$(LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_8)",
 					"$(LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_9)",
+					"$(LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_10)",
 				);
 				LIBRARY_SEARCH_PATHS_QUOTED_1 = "\"$(SRCROOT)/../../../addons/ofxOpenCv/libs/opencv/lib/osx\"";
 				LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_1 = "\"$(SRCROOT)/../../../addons/ofxOpenCv/libs/opencv/lib/osx\"";
+				LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_10 = "\"$(SRCROOT)/../../../addons/ofxPCL/libs/pcl/lib/osx\"";
 				LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_2 = "\"$(SRCROOT)/../../../addons/ofxOpenCv/libs/opencv/lib/osx\"";
 				LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_3 = "\"$(SRCROOT)/../../../addons/ofxTimeline/libs/kiss/lib/linux\"";
 				LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_4 = "\"$(SRCROOT)/../../../addons/ofxTimeline/libs/openal/libs/vs2010/EFX-Util_MT\"";
