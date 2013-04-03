@@ -920,8 +920,8 @@ void testApp::draw(){
                 sprintf(filename, "%s/save.%05d.png", saveFolder.c_str(), videoFrame);
 				
 				if(renderRainbowVideo){
-					rainbowExporter.setPlayer(&player);
-					rainbowExporter.setRenderer(&renderer);
+					rainbowExporter.setPlayer( &player );
+					rainbowExporter.setRenderer( &meshBuilder );
 					rainbowExporter.maxDepth = renderer.farClip;
 					rainbowExporter.minDepth = 400;
 					rainbowExporter.inoutPoint.min = timeline.getInFrame();
